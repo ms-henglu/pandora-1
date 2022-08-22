@@ -1,10 +1,10 @@
 package generator
 
 type Settings struct {
-	Transport TransportLayer
+	TransportLayerOverride *TransportLayer
 }
 
-type TransportLayer string
+type TransportLayer = string
 
 const (
 	AutoRest TransportLayer = "autorest"

@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"github.com/hashicorp/pandora/tools/sdk/resourcemanager"
 )
 
@@ -16,6 +17,10 @@ func GetResourceManagerServices(client resourcemanager.Client) (*ResourceManager
 		serviceDetails, err := client.ServiceDetails().Get(service)
 		if err != nil {
 			return nil, err
+		}
+
+		if serviceDetails.TransportLayer == nil {
+			return nil, fmt.Errorf("encountered nil TransportLayer for %s", name)
 		}
 
 		terraformDetails, err := client.Terraform().Get(*serviceDetails)
@@ -58,6 +63,7 @@ func GetResourceManagerServices(client resourcemanager.Client) (*ResourceManager
 			Details:              service,
 			TerraformPackageName: serviceDetails.TerraformPackageName,
 			Terraform:            *terraformDetails,
+			TransportLayer:       *serviceDetails.TransportLayer,
 			Versions:             serviceVersions,
 		}
 	}
@@ -89,6 +95,10 @@ func GetResourceManagerServicesByName(client resourcemanager.Client, servicesToL
 			return nil, err
 		}
 
+		if serviceDetails.TransportLayer == nil {
+			return nil, fmt.Errorf("encountered nil TransportLayer for %s", name)
+		}
+
 		terraformDetails, err := client.Terraform().Get(*serviceDetails)
 		if err != nil {
 			return nil, err
@@ -129,6 +139,7 @@ func GetResourceManagerServicesByName(client resourcemanager.Client, servicesToL
 			Details:              service,
 			TerraformPackageName: serviceDetails.TerraformPackageName,
 			Terraform:            *terraformDetails,
+			TransportLayer:       *serviceDetails.TransportLayer,
 			Versions:             serviceVersions,
 		}
 	}

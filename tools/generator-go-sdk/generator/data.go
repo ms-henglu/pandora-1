@@ -48,6 +48,9 @@ type ServiceGeneratorData struct {
 	// the name of the service as a package (e.g. resources or eventhub)
 	servicePackageName string
 
+	// transportLayer is the transport layer to use for this service, one of "autorest" or "pandora"
+	transportLayer string
+
 	// development feature flag - this requires work in the Resource ID parser to handle name conflicts
 	// @tombuildsstuff: fix this
 	useIdAliases bool
@@ -74,6 +77,7 @@ func (i ServiceGeneratorInput) generatorData() ServiceGeneratorData {
 		serviceClientName:  fmt.Sprintf("%sClient", strings.Title(i.ResourceName)),
 		servicePackageName: strings.ToLower(i.ServiceName),
 		source:             i.Source,
+		transportLayer:     i.ServiceDetails.TransportLayer,
 		useIdAliases:       false,
 	}
 }

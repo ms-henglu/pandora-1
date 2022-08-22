@@ -18,4 +18,9 @@ type Service struct {
 	// Ignore is a list of Versions which should be Ignored for this Service
 	// A version is automatically ignored if it's not defined in
 	Ignore *[]string `hcl:"ignore"`
+
+	// Transport is the base layer to use for this service
+	// Defaults to "autorest", can be "pandora"
+	// The default value will change at some point
+	Transport *string `hcl:"transport"`
 }

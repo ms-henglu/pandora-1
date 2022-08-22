@@ -38,6 +38,9 @@ type ServiceDetails struct {
 	// metadata (incl. Data Sources/Resources) for this API Version
 	TerraformUri string `json:"terraformUri"`
 
+	// TransportLayer is the transport layer to use, should be either "autorest" or "pandora"
+	TransportLayer *string `json:"transportLayer"`
+
 	// Versions is a summary of the Versions available for this Service
 	Versions map[string]ServiceVersion `json:"versions"`
 }
