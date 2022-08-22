@@ -246,6 +246,7 @@ service "portal" {
 service "postgresql" {
   name      = "PostgreSql"
   available = ["2017-12-01", "2018-06-01", "2020-01-01", "2021-06-01"]
+  transport = "pandora"
 }
 service "postgresqlhsc" {
   name      = "PostgreSqlHSC"

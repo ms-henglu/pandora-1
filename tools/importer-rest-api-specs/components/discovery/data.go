@@ -54,6 +54,11 @@ func FindServices(input FindServiceInput, terraformConfig definitions.Config) (*
 					filesForVersion = append(filesForVersion, fileWithoutPrefix)
 				}
 
+				transport := TransportAutorest
+				if service.Transport != nil {
+					transport = *service.Transport
+				}
+
 				resourceManagerService := ResourceManagerServiceInput{
 					ServiceName:      service.Name,
 					ApiVersion:       version,
@@ -61,6 +66,7 @@ func FindServices(input FindServiceInput, terraformConfig definitions.Config) (*
 					OutputDirectory:  input.OutputDirectory,
 					SwaggerDirectory: versionDirectory,
 					SwaggerFiles:     filesForVersion,
+					Transport:        transport,
 				}
 
 				definition, ok := terraformConfig.Services[service.Name]
@@ -121,6 +127,11 @@ func FindServicesByName(input FindServiceInput, terraformConfig definitions.Conf
 					filesForVersion = append(filesForVersion, fileWithoutPrefix)
 				}
 
+				transport := TransportAutorest
+				if service.Transport != nil {
+					transport = *service.Transport
+				}
+
 				resourceManagerService := ResourceManagerServiceInput{
 					ServiceName:      service.Name,
 					ApiVersion:       version,
@@ -128,6 +139,7 @@ func FindServicesByName(input FindServiceInput, terraformConfig definitions.Conf
 					OutputDirectory:  input.OutputDirectory,
 					SwaggerDirectory: versionDirectory,
 					SwaggerFiles:     filesForVersion,
+					Transport:        transport,
 				}
 
 				definition, ok := terraformConfig.Services[service.Name]

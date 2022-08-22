@@ -14,6 +14,7 @@ public class Service : ServiceDefinition
     public string Name => "Pandamonium";
     public bool Generate => true;
     public string? ResourceProvider => "Microsoft.Blah";
+    public string TransportLayer => "pandora";
 
     public string? TerraformPackageName => "pandamonium";
     public IEnumerable<TerraformResourceDefinition> TerraformResources => new List<TerraformResourceDefinition>();

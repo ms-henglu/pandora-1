@@ -11,7 +11,15 @@ type ServiceInput struct {
 	SwaggerDirectory           string
 	SwaggerFiles               []string
 	TerraformServiceDefinition *definitions.ServiceDefinition
+	Transport                  Transport
 }
+
+type Transport = string
+
+const (
+	TransportAutorest Transport = "autorest"
+	TransportPandora  Transport = "pandora"
+)
 
 type ResourceManagerServiceInput struct {
 	ServiceName                string
@@ -21,6 +29,7 @@ type ResourceManagerServiceInput struct {
 	SwaggerDirectory           string
 	SwaggerFiles               []string
 	TerraformServiceDefinition *definitions.ServiceDefinition
+	Transport                  Transport
 }
 
 func (rmi ResourceManagerServiceInput) ToRunInput() ServiceInput {
@@ -33,5 +42,6 @@ func (rmi ResourceManagerServiceInput) ToRunInput() ServiceInput {
 		SwaggerDirectory:           rmi.SwaggerDirectory,
 		SwaggerFiles:               rmi.SwaggerFiles,
 		TerraformServiceDefinition: rmi.TerraformServiceDefinition,
+		Transport:                  rmi.Transport,
 	}
 }

@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/pandora/tools/importer-rest-api-specs/models"
 )
 
-func codeForServiceDefinition(namespace, serviceName string, resourceProvider, terraformPackage *string, apiVersions []models.AzureApiDefinition) string {
+func codeForServiceDefinition(namespace, serviceName, transportLayer string, resourceProvider, terraformPackage *string, apiVersions []models.AzureApiDefinition) string {
 	rp := "null"
 	if resourceProvider != nil {
 		rp = fmt.Sprintf("%q", *resourceProvider)
@@ -44,6 +44,7 @@ public partial class Service : ServiceDefinition
 {
 	public string Name => %[3]q;
 	public string? ResourceProvider => %[4]s;
+	public string? TransportLayer => %[7]q;
 	public string? TerraformPackageName => %[5]s;
 
 	public IEnumerable<TerraformResourceDefinition> TerraformResources => new List<TerraformResourceDefinition>
@@ -51,7 +52,7 @@ public partial class Service : ServiceDefinition
 		%[6]s
 	};
 }
-`, restApiSpecsLicence, namespace, serviceName, rp, terraformPackageName, strings.Join(terraformResources, "\n"))
+`, restApiSpecsLicence, namespace, serviceName, rp, terraformPackageName, strings.Join(terraformResources, "\n"), transportLayer)
 }
 
 func codeForServiceDefinitionGenerationSettings(namespace string, serviceName string) string {

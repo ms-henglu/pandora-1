@@ -16,6 +16,7 @@ type Generator struct {
 	serviceName                   string
 	swaggerGitSha                 string
 	terraformPackageName          *string
+	transportLayer                string
 	workingDirectoryForService    string
 	workingDirectoryForApiVersion string
 	workingDirectoryForTerraform  string

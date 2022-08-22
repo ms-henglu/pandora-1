@@ -129,7 +129,7 @@ func runImportForService(input RunInput, serviceName string, apiVersionsForServi
 	}
 
 	logger.Trace("Task: Generating Service Definitions..")
-	if err := task.generateServiceDefinitions(serviceName, input.OutputDirectory, rootNamespace, swaggerGitSha, resourceProvider, terraformPackageName, apiVersions, logger.Named("Service Definitions")); err != nil {
+	if err := task.generateServiceDefinitions(serviceName, input.OutputDirectory, rootNamespace, swaggerGitSha, resourceProvider, terraformPackageName, "", apiVersions, logger.Named("Service Definitions")); err != nil {
 		return fmt.Errorf("generating Service Definitions for %q: %+v", serviceName, err)
 	}
 
