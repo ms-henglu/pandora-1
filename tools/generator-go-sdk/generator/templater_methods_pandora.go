@@ -184,6 +184,76 @@ func (c %[1]s) %[2]s(ctx context.Context %[4]s) (result %[2]sOperationResponse, 
 	return &templated, nil
 }
 
+func (c methodsPandoraTemplater) longRunningOperationTemplate(data ServiceGeneratorData) (*string, error) {
+	argumentsMethodCode, err := c.argumentsTemplateForMethod(data)
+	if err != nil {
+		return nil, fmt.Errorf("building arguments for long running template: %+v", err)
+	}
+	requestArguments := c.requestArgumentsTemplate()
+	requestConfig, err := c.requestConfig(data)
+	if err != nil {
+		return nil, fmt.Errorf("building request config: %+v", err)
+	}
+	argumentsCode := c.argumentsTemplate()
+	optionsStruct, err := c.optionsStruct(data)
+	if err != nil {
+		return nil, fmt.Errorf("building options struct: %+v", err)
+	}
+	responseStruct, err := c.responseStructTemplate(data)
+	if err != nil {
+		return nil, fmt.Errorf("building response struct template: %+v", err)
+	}
+	method := capitalizeFirstLetter(c.operation.Method)
+
+	// TODO: check value of provisioningState field after calling PollUntilDone()
+	templated := fmt.Sprintf(`
+%[8]s
+%[9]s
+
+// %[2]s ...
+func (c %[1]s) %[2]s(ctx context.Context %[4]s) (result %[2]sOperationResponse, err error) {
+	req, err := c.Client.New%[3]sRequest(ctx %[5]s)
+	if err != nil {
+		return
+	}
+
+	%[6]s
+
+	var resp *client.Response
+	resp, err = req.Execute()
+	if resp != nil {
+		result.OData = resp.OData
+		result.HttpResponse = resp.Response
+	}
+	if err != nil {
+		return
+	}
+
+	result.Poller, err = resourcemanager.NewPollerFromResponse(ctx, resp, c.Client)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// %[2]sThenPoll performs %[2]s then polls until it's completed
+func (c %[1]s) %[2]sThenPoll(ctx context.Context %[4]s) error {
+	result, err := c.%[2]s(ctx %[7]s)
+	if err != nil {
+		return fmt.Errorf("performing %[2]s: %%+v", err)
+	}
+
+	if err := result.Poller.PollUntilDone(); err != nil {
+		return fmt.Errorf("polling after %[2]s: %%+v", err)
+	}
+
+	return nil
+}
+`, data.serviceClientName, c.operationName, method, *argumentsMethodCode, requestArguments, *requestConfig, argumentsCode, *responseStruct, *optionsStruct)
+	return &templated, nil
+}
+
 func (c methodsPandoraTemplater) listOperationTemplate(data ServiceGeneratorData) (*string, error) {
 	argumentsMethodCode, err := c.argumentsTemplateForMethod(data)
 	if err != nil {
@@ -301,76 +371,6 @@ func (c %[1]s) %[2]sComplete(ctx context.Context%[3]s) (result %[2]sCompleteResu
 	return &templated, nil
 }
 
-func (c methodsPandoraTemplater) longRunningOperationTemplate(data ServiceGeneratorData) (*string, error) {
-	argumentsMethodCode, err := c.argumentsTemplateForMethod(data)
-	if err != nil {
-		return nil, fmt.Errorf("building arguments for long running template: %+v", err)
-	}
-	requestArguments := c.requestArgumentsTemplate()
-	requestConfig, err := c.requestConfig(data)
-	if err != nil {
-		return nil, fmt.Errorf("building request config: %+v", err)
-	}
-	argumentsCode := c.argumentsTemplate()
-	optionsStruct, err := c.optionsStruct(data)
-	if err != nil {
-		return nil, fmt.Errorf("building options struct: %+v", err)
-	}
-	responseStruct, err := c.responseStructTemplate(data)
-	if err != nil {
-		return nil, fmt.Errorf("building response struct template: %+v", err)
-	}
-	method := capitalizeFirstLetter(c.operation.Method)
-
-	// TODO: check value of provisioningState field after calling PollUntilDone()
-	templated := fmt.Sprintf(`
-%[8]s
-%[9]s
-
-// %[2]s ...
-func (c %[1]s) %[2]s(ctx context.Context %[4]s) (result %[2]sOperationResponse, err error) {
-	req, err := c.Client.New%[3]sRequest(ctx %[5]s)
-	if err != nil {
-		return
-	}
-
-	%[6]s
-
-	var resp *client.Response
-	resp, err = req.Execute()
-	if resp != nil {
-		result.OData = resp.OData
-		result.HttpResponse = resp.Response
-	}
-	if err != nil {
-		return
-	}
-
-	result.Poller, err = resourcemanager.NewPollerFromResponse(ctx, resp, c.Client)
-	if err != nil {
-		return
-	}
-
-	return
-}
-
-// %[2]sThenPoll performs %[2]s then polls until it's completed
-func (c %[1]s) %[2]sThenPoll(ctx context.Context %[4]s) error {
-	result, err := c.%[2]s(ctx %[7]s)
-	if err != nil {
-		return fmt.Errorf("performing %[2]s: %%+v", err)
-	}
-
-	if err := result.Poller.PollUntilDone(); err != nil {
-		return fmt.Errorf("polling after %[2]s: %%+v", err)
-	}
-
-	return nil
-}
-`, data.serviceClientName, c.operationName, method, *argumentsMethodCode, requestArguments, *requestConfig, argumentsCode, *responseStruct, *optionsStruct)
-	return &templated, nil
-}
-
 func (c methodsPandoraTemplater) argumentsTemplate() string {
 	args := make([]string, 0)
 	if c.operation.ResourceIdName != nil {
@@ -478,10 +478,22 @@ func (c methodsPandoraTemplater) requestConfig(data ServiceGeneratorData) (*stri
 func (c methodsPandoraTemplater) unmarshalerTemplate(data ServiceGeneratorData) (*string, error) {
 	var output string
 	if c.operation.ResponseObject != nil {
+		golangTypeName, err := golangTypeNameForObjectDefinition(*c.operation.ResponseObject)
+		if err != nil {
+			return nil, fmt.Errorf("determing golang type name for response object: %+v", err)
+		}
+		typeName := *golangTypeName
 		if c.operation.FieldContainingPaginationDetails != nil {
 			output = fmt.Sprintf(`
-	// TODO list struct unmarshal
-`)
+	var values struct {
+		Values *[]%[1]s %[2]s
+	}
+	if err = resp.Unmarshal(&values); err != nil {
+		return
+	}
+
+	result.Model = values.Values
+`, typeName, "`json:\"values\"`")
 		} else {
 			output = fmt.Sprintf(`
 	if err = resp.Unmarshal(&result.Model); err != nil {
@@ -526,7 +538,7 @@ func (c methodsPandoraTemplater) responseStructTemplate(data ServiceGeneratorDat
 		// whilst these looks like they could crash it's guaranteed above
 		paginationCode = fmt.Sprintf(`
 type %[2]sCompleteResult struct {
-	Items   []%[1]s
+	Items []%[1]s
 }
 `, typeName, c.operationName)
 	}
