@@ -222,8 +222,8 @@ const (
 	TerraformSchemaFieldTypeReference TerraformSchemaFieldType = "Reference"
 	TerraformSchemaFieldTypeSet       TerraformSchemaFieldType = "Set"
 	TerraformSchemaFieldTypeString    TerraformSchemaFieldType = "String"
-	TerraformSchemaFieldTypeRawObject TerraformSchemaFieldType = "Object"
-	TerraformSchemaFieldTypeRawFile   TerraformSchemaFieldType = "File"
+	// NOTE: we intentionally only have Terraform Schema fields (and specific CustomSchema types) here - meaning
+	// that we don't have RawObject/RawFile since we have no means of expressing them today.
 
 	TerraformSchemaFieldTypeEdgeZone                      TerraformSchemaFieldType = "EdgeZone"
 	TerraformSchemaFieldTypeIdentitySystemAssigned        TerraformSchemaFieldType = "IdentitySystemAssigned"
