@@ -14,12 +14,11 @@ import (
 )
 
 func (pipelineTask) generateTerraformDetails(input discovery.ServiceInput, data *models.AzureApiDefinition, logger hclog.Logger) (*models.AzureApiDefinition, error) {
-	// TODO: iterate over each of the TF resources that we have in input.TerraformServiceDefinition
-	// call the Schema package build that up and the other stuff..
-
-	var apiResource map[string]models.AzureApiResource
-
 	for key, resource := range data.Resources {
+		if resource.Terraform == nil {
+			continue
+		}
+
 		// This is the data API name of the resource i.e. VirtualMachines
 		r, err := transformer.ApiResourceFromModelResource(resource)
 		if err != nil {
@@ -28,80 +27,25 @@ func (pipelineTask) generateTerraformDetails(input discovery.ServiceInput, data 
 
 		b := schema.NewBuilder(resource.Constants, r.Schema.Models, r.Operations.Operations, r.Schema.ResourceIds)
 
-		if t := resource.Terraform; t != nil {
-			// We only generate the schema fields for resources that have existing TerraformDetails
-			// Seem to only be the ones that already have a .hcl config
-			var terraformDetails resourcemanager.TerraformDetails
-			var terraformResourceDetails resourcemanager.TerraformResourceDetails
-
-			nestedModels := make([]string, 0)
-			referencedEnums := make([]string, 0)
-
-			for k, v := range t.Resources {
-				// This is the Terraform name of the resource i.e. virtual_machine - why does this need to be a map?
-				// We need to add to this map any sub-schemas we find so their classes can also be generated
-				logger.Info(fmt.Sprintf("Building Schema for %s", k))
-				terraformResourceDetails = v
-				model, err := b.Build(v, logger)
-				if err != nil {
-					return nil, err
-				}
-
-				nestedModels, referencedEnums = findAllNestedModelsForResource(model, resource)
-
-				// Writing all of this info into an empty TerraformDetails struct for this particular resource
-				v.SchemaModelName = k
-				if v.SchemaModels == nil {
-					v.SchemaModels = map[string]resourcemanager.TerraformSchemaModelDefinition{k: *model}
-				} else {
-					v.SchemaModels[k] = *model
-				}
-
-				if terraformDetails.Resources == nil {
-					terraformDetails.Resources = map[string]resourcemanager.TerraformResourceDetails{k: v}
-				} else {
-					terraformDetails.Resources[k] = v
-				}
-
-				// Just copy Data Sources for now
-				terraformDetails.DataSources = t.DataSources
+		terraformResources := make(map[string]resourcemanager.TerraformResourceDetails)
+		for resourceLabel, resourceDetails := range resource.Terraform.Resources {
+			// This is the Terraform name of the resource i.e. virtual_machine - why does this need to be a map?
+			// We need to add to this map any sub-schemas we find so their classes can also be generated
+			logger.Info(fmt.Sprintf("Building Schema for %s", resourceLabel))
+			modelsForResource, err := b.Build(resourceDetails, logger)
+			if err != nil {
+				return nil, err
 			}
 
-			terraformDetails.Schemas = map[string]resourcemanager.TerraformResourceDetails{}
-			for _, v := range nestedModels {
-				nestedModel, err := b.BuildNestedModelDefinition(v, terraformResourceDetails, logger)
-				if err != nil || nestedModel == nil {
-					continue
-				}
-				terraformDetails.Schemas[v] = resourcemanager.TerraformResourceDetails{
-					SchemaModelName: v,
-					SchemaModels:    map[string]resourcemanager.TerraformSchemaModelDefinition{v: *nestedModel},
-				}
-			}
+			// Writing all of this info into an empty TerraformDetails struct for this particular resource
+			resourceDetails.SchemaModelName = resourceDetails.ResourceName
+			resourceDetails.SchemaModels = *modelsForResource
 
-			terraformDetails.Constants = map[string]resourcemanager.ConstantDetails{}
-			for _, v := range referencedEnums {
-				if c, ok := resource.Constants[v]; ok {
-					terraformDetails.Constants[v] = c
-				}
-			}
-
-			// Adding the terraformDetails to the relevant resource, keeping the existing info on constants, models etc.
-			// This feels unpleasantly hacky
-			temp := resource
-			temp.Terraform = &terraformDetails
-
-			if apiResource == nil {
-				apiResource = map[string]models.AzureApiResource{key: temp}
-			} else {
-				apiResource[key] = temp
-			}
+			terraformResources[resourceLabel] = resourceDetails
 		}
-	}
+		resource.Terraform.Resources = terraformResources
 
-	// merge the processed data back in
-	for k, v := range apiResource {
-		data.Resources[k] = v
+		data.Resources[key] = resource
 	}
 
 	return data, nil

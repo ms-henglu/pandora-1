@@ -14,8 +14,6 @@ var apiObjectDefinitionTypesToFieldObjectDefinitionTypes = map[resourcemanager.A
 	resourcemanager.IntegerApiObjectDefinitionType:   resourcemanager.TerraformSchemaFieldTypeInteger,
 	resourcemanager.FloatApiObjectDefinitionType:     resourcemanager.TerraformSchemaFieldTypeFloat,
 	resourcemanager.ListApiObjectDefinitionType:      resourcemanager.TerraformSchemaFieldTypeList,
-	resourcemanager.RawFileApiObjectDefinitionType:   resourcemanager.TerraformSchemaFieldTypeRawFile, // TODO: implement
-	resourcemanager.RawObjectApiObjectDefinitionType: resourcemanager.TerraformSchemaFieldTypeRawObject,
 	resourcemanager.ReferenceApiObjectDefinitionType: resourcemanager.TerraformSchemaFieldTypeReference,
 	resourcemanager.StringApiObjectDefinitionType:    resourcemanager.TerraformSchemaFieldTypeString,
 

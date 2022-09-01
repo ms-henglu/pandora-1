@@ -127,11 +127,19 @@ func TestBuildForResourceGroupAllModelsTheSame(t *testing.T) {
 	if err != nil {
 		t.Fatalf("building schema: %+v", err)
 	}
-	if len(actual.Fields) != 3 {
-		t.Fatalf("expected 3 fields but got %d", len(actual.Fields))
+	if actual == nil {
+		t.Fatalf("expected 1 model but got nil")
+	}
+	if len(*actual) != 1 {
+		t.Fatalf("expected 1 model but got %d", len(*actual))
 	}
 
-	name, ok := actual.Fields["name"]
+	model := (*actual)["ResourceGroup"]
+	if len(model.Fields) != 3 {
+		t.Fatalf("expected 3 fields but got %d", len(model.Fields))
+	}
+
+	name, ok := model.Fields["name"]
 	if !ok {
 		t.Fatalf("expected there to be a field 'name' but didn't get one")
 	}
@@ -154,7 +162,7 @@ func TestBuildForResourceGroupAllModelsTheSame(t *testing.T) {
 		t.Fatalf("expected the field 'name' to be !Optional, !Computed but got %t / %t", name.Optional, name.Computed)
 	}
 
-	location, ok := actual.Fields["location"]
+	location, ok := model.Fields["location"]
 	if !ok {
 		t.Fatalf("expected there to be a field 'location' but didn't get one")
 	}
@@ -177,7 +185,7 @@ func TestBuildForResourceGroupAllModelsTheSame(t *testing.T) {
 		t.Fatalf("expected the field 'location' to be !Optional, !Computed but got %t / %t", location.Optional, location.Computed)
 	}
 
-	tags, ok := actual.Fields["tags"]
+	tags, ok := model.Fields["tags"]
 	if !ok {
 		t.Fatalf("expected there to be a field 'tags' but didn't get one")
 	}

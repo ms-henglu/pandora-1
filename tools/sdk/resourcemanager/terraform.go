@@ -28,18 +28,14 @@ func (c TerraformClient) Get(input ServiceDetails) (*TerraformDetails, error) {
 
 type TerraformDetails struct {
 	// DataSources is a key (Resource Label) value (TerraformDataSourceDetails) pair of
-	// metadata about the Terraform Data Sources which should be generated.
+	// metadata about the Terraform Data Sources which should be generated, including
+	// any nested schemas.
 	DataSources map[string]TerraformDataSourceDetails `json:"dataSources"`
 
 	// Resources is a key (Resource Label) value (TerraformResourceDetails) pair of
-	// metadata about the Terraform Resources which should be generated.
+	// metadata about the Terraform Resources which should be generated, including
+	// any nested schemas.
 	Resources map[string]TerraformResourceDetails `json:"resources"`
-
-	// Schemas is a Collection of nested model Schemas used by the Resources that should be generated
-	// This borrows the resouce details for expedience, but should probably be a new type
-	Schemas map[string]TerraformResourceDetails `json:"modelSchemas"`
-
-	Constants map[string]ConstantDetails
 }
 
 type TerraformDataSourceDetails struct {
