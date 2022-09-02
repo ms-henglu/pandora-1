@@ -33,6 +33,7 @@ func codeForTerraformSchemaModelDefinition(terraformNamespace, name string, mode
 
 	out := fmt.Sprintf(`using System.Collections.Generic;
 using Pandora.Definitions.Attributes;
+using Pandora.Definitions.CommonSchema;
 
 namespace %[1]s;
 
@@ -178,15 +179,14 @@ var basicSchemaFieldTypesToDotNetTypes = map[resourcemanager.TerraformSchemaFiel
 }
 
 var commonSchemaFieldTypesToDotNetTypes = map[resourcemanager.TerraformSchemaFieldType]string{
-	// TODO: we should introduce a `CommonSchema.XXX` to the Data API for the TF Schema
-	resourcemanager.TerraformSchemaFieldTypeEdgeZone:                      "CustomTypes.EdgeZone",
-	resourcemanager.TerraformSchemaFieldTypeIdentitySystemAssigned:        "TODO",
-	resourcemanager.TerraformSchemaFieldTypeIdentitySystemAndUserAssigned: "TODO",
-	resourcemanager.TerraformSchemaFieldTypeIdentitySystemOrUserAssigned:  "TODO",
-	resourcemanager.TerraformSchemaFieldTypeIdentityUserAssigned:          "TODO",
-	resourcemanager.TerraformSchemaFieldTypeLocation:                      "CustomTypes.Location",
-	resourcemanager.TerraformSchemaFieldTypeResourceGroup:                 "CustomTypes.ResourceGroup",
-	resourcemanager.TerraformSchemaFieldTypeTags:                          "CustomTypes.Tags",
-	resourcemanager.TerraformSchemaFieldTypeZone:                          "TODO",
-	resourcemanager.TerraformSchemaFieldTypeZones:                         "TODO",
+	resourcemanager.TerraformSchemaFieldTypeEdgeZone:                      "CommonSchema.EdgeZone",
+	resourcemanager.TerraformSchemaFieldTypeIdentitySystemAssigned:        "CommonSchema.SystemAssignedIdentity",
+	resourcemanager.TerraformSchemaFieldTypeIdentitySystemAndUserAssigned: "CommonSchema.SystemAndUserAssignedIdentity",
+	resourcemanager.TerraformSchemaFieldTypeIdentitySystemOrUserAssigned:  "CommonSchema.SystemOrUserAssignedIdentity",
+	resourcemanager.TerraformSchemaFieldTypeIdentityUserAssigned:          "CommonSchema.UserAssignedIdentity",
+	resourcemanager.TerraformSchemaFieldTypeLocation:                      "CommonSchema.Location",
+	resourcemanager.TerraformSchemaFieldTypeResourceGroup:                 "CommonSchema.ResourceGroup",
+	resourcemanager.TerraformSchemaFieldTypeTags:                          "CommonSchema.Tags",
+	resourcemanager.TerraformSchemaFieldTypeZone:                          "CommonSchema.ZoneSingle",
+	resourcemanager.TerraformSchemaFieldTypeZones:                         "CommonSchema.ZonesMultiple",
 }
