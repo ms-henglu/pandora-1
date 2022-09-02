@@ -29,7 +29,7 @@ public static class TerraformSchemaModelDefinition
             var fieldFromProperty = TerraformSchemaFieldDefinition.Map(property);
             fields.Add(property.Name, fieldFromProperty);
 
-            if (property.PropertyType.IsNativeType() || property.PropertyType.IsPandoraCustomType())
+            if (property.PropertyType.IsNativeType() || property.PropertyType.IsPandoraCommonSchemaType())
             {
                 continue;
             }

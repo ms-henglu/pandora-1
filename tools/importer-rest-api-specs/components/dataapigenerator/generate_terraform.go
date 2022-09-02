@@ -3,6 +3,7 @@ package dataapigenerator
 import (
 	"fmt"
 	"path"
+	"strings"
 
 	"github.com/hashicorp/pandora/tools/importer-rest-api-specs/models"
 )
@@ -69,7 +70,7 @@ func (s Generator) generateTerraformDefinitions(apiVersion models.AzureApiDefini
 					continue
 				}
 
-				nestedSchemaFileName := path.Join(s.workingDirectoryForTerraform, fmt.Sprintf("%s-Resource-Schema-%s.cs", details.ResourceName, modelName))
+				nestedSchemaFileName := path.Join(s.workingDirectoryForTerraform, fmt.Sprintf("%s-Resource-Schema-%s.cs", details.ResourceName, strings.TrimPrefix(details.SchemaModelName, modelName)))
 				s.logger.Trace(fmt.Sprintf("Generating Model Schema into %q", nestedSchemaFileName))
 				nestedSchemaCode, err := codeForTerraformSchemaModelDefinition(s.namespaceForTerraform, modelName, model, details, resource)
 				if err != nil {
