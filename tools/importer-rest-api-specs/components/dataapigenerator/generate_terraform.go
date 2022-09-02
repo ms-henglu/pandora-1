@@ -70,7 +70,7 @@ func (s Generator) generateTerraformDefinitions(apiVersion models.AzureApiDefini
 					continue
 				}
 
-				nestedSchemaFileName := path.Join(s.workingDirectoryForTerraform, fmt.Sprintf("%s-Resource-Schema-%s.cs", details.ResourceName, strings.TrimPrefix(details.SchemaModelName, modelName)))
+				nestedSchemaFileName := path.Join(s.workingDirectoryForTerraform, fmt.Sprintf("%s-Resource-Schema-%s.cs", details.ResourceName, strings.TrimPrefix(modelName, details.SchemaModelName)))
 				s.logger.Trace(fmt.Sprintf("Generating Model Schema into %q", nestedSchemaFileName))
 				nestedSchemaCode, err := codeForTerraformSchemaModelDefinition(s.namespaceForTerraform, modelName, model, details, resource)
 				if err != nil {
