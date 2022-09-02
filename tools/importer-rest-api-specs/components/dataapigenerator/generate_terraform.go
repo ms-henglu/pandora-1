@@ -64,6 +64,11 @@ func (s Generator) generateTerraformDefinitions(apiVersion models.AzureApiDefini
 
 			// then output the other Schema types for this Terraform Resource
 			for modelName, model := range details.SchemaModels {
+				// this is output above
+				if modelName == details.SchemaModelName {
+					continue
+				}
+
 				nestedSchemaFileName := path.Join(s.workingDirectoryForTerraform, fmt.Sprintf("%s-Resource-Schema-%s.cs", details.ResourceName, modelName))
 				s.logger.Trace(fmt.Sprintf("Generating Model Schema into %q", nestedSchemaFileName))
 				nestedSchemaCode, err := codeForTerraformSchemaModelDefinition(s.namespaceForTerraform, modelName, model, details, resource)

@@ -29,16 +29,21 @@ func (pipelineTask) generateTerraformDetails(input discovery.ServiceInput, data 
 
 		terraformResources := make(map[string]resourcemanager.TerraformResourceDetails)
 		for resourceLabel, resourceDetails := range resource.Terraform.Resources {
-			// This is the Terraform name of the resource i.e. virtual_machine - why does this need to be a map?
 			// We need to add to this map any sub-schemas we find so their classes can also be generated
 			logger.Info(fmt.Sprintf("Building Schema for %s", resourceLabel))
+
+			// use the ResourceName to build up the name for this Schema Model
+			resourceDetails.SchemaModelName = fmt.Sprintf("%sResource", resourceDetails.ResourceName)
 			modelsForResource, err := b.Build(resourceDetails, logger)
 			if err != nil {
 				return nil, err
 			}
 
-			// Writing all of this info into an empty TerraformDetails struct for this particular resource
-			resourceDetails.SchemaModelName = resourceDetails.ResourceName
+			if modelsForResource == nil {
+				logger.Debug(fmt.Sprintf("Resource %q returned no models, meaning this has been filtered out (maybe a discriminated type)"))
+				continue
+			}
+
 			resourceDetails.SchemaModels = *modelsForResource
 
 			terraformResources[resourceLabel] = resourceDetails

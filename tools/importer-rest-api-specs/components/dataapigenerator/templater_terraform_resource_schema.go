@@ -36,7 +36,7 @@ using Pandora.Definitions.Attributes;
 
 namespace %[1]s;
 
-public class %[2]s
+public class %[2]sSchema
 {
 %s
 }
@@ -178,6 +178,7 @@ var basicSchemaFieldTypesToDotNetTypes = map[resourcemanager.TerraformSchemaFiel
 }
 
 var commonSchemaFieldTypesToDotNetTypes = map[resourcemanager.TerraformSchemaFieldType]string{
+	// TODO: we should introduce a `CommonSchema.XXX` to the Data API for the TF Schema
 	resourcemanager.TerraformSchemaFieldTypeEdgeZone:                      "CustomTypes.EdgeZone",
 	resourcemanager.TerraformSchemaFieldTypeIdentitySystemAssigned:        "TODO",
 	resourcemanager.TerraformSchemaFieldTypeIdentitySystemAndUserAssigned: "TODO",
