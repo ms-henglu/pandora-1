@@ -9,6 +9,25 @@ namespace Pandora.Data.Transformers;
 public static class TerraformSchemaModelDefinitionTests
 {
     [TestCase]
+    public static void MappingABuiltInTypeShouldReturnNothing()
+    {
+        var basicTypes = new List<Type>
+        {
+            typeof(bool),
+            typeof(DateTime),
+            typeof(float),
+            typeof(int),
+            typeof(string),
+        };
+        foreach (var basicType in basicTypes)
+        {
+            var result = TerraformSchemaModelDefinition.Map(basicType);
+            Assert.NotNull(result);
+            Assert.AreEqual(0, result.Count);
+        }
+    }
+
+    [TestCase]
     public static void ParsingAModelWhichContainsNoPropertiesShouldRaiseAnException()
     {
         Assert.Throws<NotSupportedException>(() => TerraformSchemaModelDefinition.Map(typeof(ModelWithNoProperties)));
