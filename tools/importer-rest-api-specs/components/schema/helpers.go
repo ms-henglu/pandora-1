@@ -95,3 +95,7 @@ func updateFieldName(fieldName string, input Builder, model *resourcemanager.Mod
 	}
 	return fieldName
 }
+
+func stringPointer(input string) *string {
+	return &input
+}
