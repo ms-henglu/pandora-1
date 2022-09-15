@@ -12,6 +12,7 @@ import (
 
 type FindServiceInput struct {
 	ConfigFilePath   string
+	DefaultTransport Transport
 	OutputDirectory  string
 	SwaggerDirectory string
 	Logger           hclog.Logger
@@ -54,7 +55,7 @@ func FindServices(input FindServiceInput, terraformConfig definitions.Config) (*
 					filesForVersion = append(filesForVersion, fileWithoutPrefix)
 				}
 
-				transport := TransportAutorest
+				transport := input.DefaultTransport
 				if service.Transport != nil {
 					transport = *service.Transport
 				}
@@ -127,8 +128,8 @@ func FindServicesByName(input FindServiceInput, terraformConfig definitions.Conf
 					filesForVersion = append(filesForVersion, fileWithoutPrefix)
 				}
 
-				transport := TransportAutorest
-				if service.Transport != nil {
+				transport := input.DefaultTransport
+				if service.Transport != nil && *service.Transport != "" {
 					transport = *service.Transport
 				}
 

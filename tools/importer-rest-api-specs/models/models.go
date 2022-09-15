@@ -9,6 +9,7 @@ import (
 type AzureApiDefinition struct {
 	ServiceName string
 	ApiVersion  string
+	Transport   string
 	Resources   map[string]AzureApiResource
 }
 

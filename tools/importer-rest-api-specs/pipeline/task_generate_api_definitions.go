@@ -15,7 +15,7 @@ func (pipelineTask) generateApiDefinitions(input discovery.ServiceInput, data mo
 	if input.TerraformServiceDefinition != nil {
 		terraformPackageName = &input.TerraformServiceDefinition.TerraformPackageName
 	}
-	dataApiGenerator := dataapigenerator.NewForApiVersion(data.ServiceName, data.ApiVersion, input.OutputDirectory, input.RootNamespace, swaggerGitSha, input.ResourceProvider, terraformPackageName, input.Transport, logger.Named("Data API Generator"))
+	dataApiGenerator := dataapigenerator.NewForApiVersion(data.ServiceName, data.ApiVersion, input.OutputDirectory, input.RootNamespace, swaggerGitSha, input.ResourceProvider, terraformPackageName, logger.Named("Data API Generator"))
 	if err := dataApiGenerator.GenerateForApiVersion(data); err != nil {
 		err = fmt.Errorf("generating Data API Definitions for Service %q / API Version %q: %+v", data.ServiceName, data.ApiVersion, err)
 		logger.Info(fmt.Sprintf("❌ Service %q - Api Version %q", data.ServiceName, data.ApiVersion))

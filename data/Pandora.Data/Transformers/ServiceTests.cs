@@ -67,7 +67,6 @@ public static class ServiceTests
             public string Name => "FakeDataPlane";
             public bool Generate => true;
             public string? ResourceProvider => null;
-            public string TransportLayer => "pandora";
 
             public string? TerraformPackageName => null;
             public IEnumerable<Definitions.Interfaces.TerraformResourceDefinition> TerraformResources => new List<Definitions.Interfaces.TerraformResourceDefinition>();
@@ -79,6 +78,7 @@ public static class ServiceTests
             public string ApiVersion => "SomeVersion";
             public bool Generate => true;
             public bool Preview => true;
+            public string TransportLayer => "pandora";
             public IEnumerable<Definitions.Interfaces.ResourceDefinition> Resources => new List<Definitions.Interfaces.ResourceDefinition> { new FakeResourceDefinition() };
             public IEnumerable<Definitions.Interfaces.TerraformResourceDefinition> TerraformResources => new List<Definitions.Interfaces.TerraformResourceDefinition>();
             public Source Source => Source.HandWritten;
@@ -92,7 +92,6 @@ public static class ServiceTests
             public string Name => "Bob";
             public bool Generate => true;
             public string? ResourceProvider => "Hello";
-            public string TransportLayer => "pandora";
 
             public string? TerraformPackageName => "bob";
             public IEnumerable<Definitions.Interfaces.TerraformResourceDefinition> TerraformResources => new List<Definitions.Interfaces.TerraformResourceDefinition>();
@@ -106,7 +105,6 @@ public static class ServiceTests
             public string Name => "FakeResourceManagerServiceWithDuplicateTerraformResources";
             public bool Generate => false;
             public string? ResourceProvider => "Microsoft.Foo";
-            public string TransportLayer => "pandora";
             public string? TerraformPackageName => "foo";
             public IEnumerable<Definitions.Interfaces.TerraformResourceDefinition> TerraformResources => new List<Definitions.Interfaces.TerraformResourceDefinition>
             {
@@ -120,7 +118,6 @@ public static class ServiceTests
             public string Name => "FakeResourceManagerServiceWithTerraformResource";
             public bool Generate => false;
             public string? ResourceProvider => "Microsoft.Foo";
-            public string TransportLayer => "pandora";
             public string? TerraformPackageName => "foo";
             public IEnumerable<Definitions.Interfaces.TerraformResourceDefinition> TerraformResources => new List<Definitions.Interfaces.TerraformResourceDefinition>
             {
@@ -144,6 +141,7 @@ public static class ServiceTests
             public string ApiVersion => "SomeVersion";
             public bool Generate => true;
             public bool Preview => true;
+            public string TransportLayer => "pandora";
             public IEnumerable<Definitions.Interfaces.ResourceDefinition> Resources => new List<Definitions.Interfaces.ResourceDefinition> { new FakeResourceDefinition() };
             public Source Source => Source.HandWritten;
         }

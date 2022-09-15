@@ -23,7 +23,7 @@ func (s Generator) generateVersionDefinition(apiVersion models.AzureApiDefinitio
 	s.logger.Debug("Generating Api Version Definition..")
 	isPreview := strings.Contains(strings.ToLower(apiVersion.ApiVersion), "preview")
 	definitionFilePath := path.Join(s.workingDirectoryForApiVersion, "ApiVersionDefinition.cs")
-	if err := writeToFile(definitionFilePath, codeForApiVersionDefinition(s.namespaceForApiVersion, apiVersion.ApiVersion, isPreview, apiVersion.Resources)); err != nil {
+	if err := writeToFile(definitionFilePath, codeForApiVersionDefinition(s.namespaceForApiVersion, apiVersion.ApiVersion, apiVersion.Transport, isPreview, apiVersion.Resources)); err != nil {
 		return fmt.Errorf("writing Api Version Definition to %q: %+v", definitionFilePath, err)
 	}
 

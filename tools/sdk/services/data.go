@@ -19,10 +19,6 @@ func GetResourceManagerServices(client resourcemanager.Client) (*ResourceManager
 			return nil, err
 		}
 
-		if serviceDetails.TransportLayer == nil {
-			return nil, fmt.Errorf("encountered nil TransportLayer for %s", name)
-		}
-
 		terraformDetails, err := client.Terraform().Get(*serviceDetails)
 		if err != nil {
 			return nil, err
@@ -53,9 +49,14 @@ func GetResourceManagerServices(client resourcemanager.Client) (*ResourceManager
 				}
 			}
 
+			if versionDetails.TransportLayer == "" {
+				return nil, fmt.Errorf("encountered invalid TransportLayer for %s", name)
+			}
+
 			serviceVersions[versionNumber] = ServiceVersion{
-				Details:   *versionInfo,
-				Resources: resources,
+				Details:        *versionInfo,
+				Resources:      resources,
+				TransportLayer: versionDetails.TransportLayer,
 			}
 		}
 
@@ -63,7 +64,6 @@ func GetResourceManagerServices(client resourcemanager.Client) (*ResourceManager
 			Details:              service,
 			TerraformPackageName: serviceDetails.TerraformPackageName,
 			Terraform:            *terraformDetails,
-			TransportLayer:       *serviceDetails.TransportLayer,
 			Versions:             serviceVersions,
 		}
 	}
@@ -95,10 +95,6 @@ func GetResourceManagerServicesByName(client resourcemanager.Client, servicesToL
 			return nil, err
 		}
 
-		if serviceDetails.TransportLayer == nil {
-			return nil, fmt.Errorf("encountered nil TransportLayer for %s", name)
-		}
-
 		terraformDetails, err := client.Terraform().Get(*serviceDetails)
 		if err != nil {
 			return nil, err
@@ -129,9 +125,14 @@ func GetResourceManagerServicesByName(client resourcemanager.Client, servicesToL
 				}
 			}
 
+			if versionDetails.TransportLayer == "" {
+				return nil, fmt.Errorf("encountered invalid TransportLayer for %s", name)
+			}
+
 			serviceVersions[versionNumber] = ServiceVersion{
-				Details:   *versionInfo,
-				Resources: resources,
+				Details:        *versionInfo,
+				Resources:      resources,
+				TransportLayer: versionDetails.TransportLayer,
 			}
 		}
 
@@ -139,7 +140,6 @@ func GetResourceManagerServicesByName(client resourcemanager.Client, servicesToL
 			Details:              service,
 			TerraformPackageName: serviceDetails.TerraformPackageName,
 			Terraform:            *terraformDetails,
-			TransportLayer:       *serviceDetails.TransportLayer,
 			Versions:             serviceVersions,
 		}
 	}

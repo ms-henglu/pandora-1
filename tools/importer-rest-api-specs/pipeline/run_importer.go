@@ -87,6 +87,8 @@ func runImportForService(input RunInput, serviceName string, apiVersionsForServi
 			Resources:   map[string]models.AzureApiResource{},
 		}
 		for _, v := range api {
+			dataForApiVersion.Transport = v.Transport
+
 			tempDataForApiVersion, err := task.parseDataForApiVersion(v, versionLogger)
 			if err != nil {
 				return fmt.Errorf("parsing data for Service %q / Version %q: %+v", v.ServiceName, v.ApiVersion, err)
@@ -94,6 +96,10 @@ func runImportForService(input RunInput, serviceName string, apiVersionsForServi
 			for name, resource := range tempDataForApiVersion.Resources {
 				dataForApiVersion.Resources[name] = resource
 			}
+		}
+
+		if dataForApiVersion.Transport == "" {
+			dataForApiVersion.Transport = input.DefaultTransport
 		}
 
 		versionLogger.Trace(fmt.Sprintf("generating Terraform Details for Service %q / Version %q", serviceName, apiVersion))
@@ -129,7 +135,7 @@ func runImportForService(input RunInput, serviceName string, apiVersionsForServi
 	}
 
 	logger.Trace("Task: Generating Service Definitions..")
-	if err := task.generateServiceDefinitions(serviceName, input.OutputDirectory, rootNamespace, swaggerGitSha, resourceProvider, terraformPackageName, "", apiVersions, logger.Named("Service Definitions")); err != nil {
+	if err := task.generateServiceDefinitions(serviceName, input.OutputDirectory, rootNamespace, swaggerGitSha, resourceProvider, terraformPackageName, apiVersions, logger.Named("Service Definitions")); err != nil {
 		return fmt.Errorf("generating Service Definitions for %q: %+v", serviceName, err)
 	}
 

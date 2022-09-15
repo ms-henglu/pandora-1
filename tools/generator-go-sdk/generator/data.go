@@ -77,7 +77,7 @@ func (i ServiceGeneratorInput) generatorData() ServiceGeneratorData {
 		serviceClientName:  fmt.Sprintf("%sClient", strings.Title(i.ResourceName)),
 		servicePackageName: strings.ToLower(i.ServiceName),
 		source:             i.Source,
-		transportLayer:     i.ServiceDetails.TransportLayer,
+		transportLayer:     i.VersionDetails.TransportLayer,
 		useIdAliases:       false,
 	}
 }

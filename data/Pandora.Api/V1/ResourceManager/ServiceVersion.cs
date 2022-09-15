@@ -49,6 +49,7 @@ public class ServiceVersionController : ControllerBase
             Resources = version.Resources.ToDictionary(a => a.Name,
                 a => MapResourceForApiVersion(a, versionNumber, serviceName)),
             Source = MapSource(version.Source),
+            TransportLayer = version.TransportLayer,
         };
     }
 
@@ -82,6 +83,9 @@ public class ApiVersionResponse
 
     [JsonPropertyName("source")]
     public string Source { get; set; }
+
+    [JsonPropertyName("transportLayer")]
+    public string TransportLayer { get; set; }
 }
 
 public class ApiTypeInformation

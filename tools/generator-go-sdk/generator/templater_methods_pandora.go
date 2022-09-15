@@ -38,9 +38,9 @@ import (
 	"github.com/hashicorp/go-azure-helpers/lang/response"
 	"github.com/hashicorp/go-azure-helpers/resourcemanager/commonids"
 	"github.com/hashicorp/go-azure-helpers/polling"
-	"github.com/hashicorp/go-azure-sdk/client"
-	"github.com/hashicorp/go-azure-sdk/client/resourcemanager"
-	"github.com/hashicorp/go-azure-sdk/odata"
+	"github.com/hashicorp/go-azure-sdk/sdk/client"
+	"github.com/hashicorp/go-azure-sdk/sdk/client/resourcemanager"
+	"github.com/hashicorp/go-azure-sdk/sdk/odata"
 )
 
 %[2]s

@@ -8,9 +8,12 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-hclog"
+	"github.com/hashicorp/pandora/tools/importer-rest-api-specs/components/discovery"
 	"github.com/hashicorp/pandora/tools/importer-rest-api-specs/pipeline"
 	"github.com/mitchellh/cli"
 )
+
+const defaultTransport = discovery.TransportAutorest
 
 var _ cli.Command = ImportCommand{}
 
@@ -42,11 +45,11 @@ Specify -services=Compute,Resource to limit to just that or don't for everything
 }
 
 func (c ImportCommand) Run(args []string) int {
-	var dataApiEndpointVar string
-	var serviceNamesRaw string
+	var dataApiEndpointVar, defaultTransportLayer, serviceNamesRaw string
 
 	f := flag.NewFlagSet("importer-rest-api-specs", flag.ExitOnError)
 	f.StringVar(&dataApiEndpointVar, "data-api", "", "The Data API Endpoint (e.g. --data-api=http://localhost:5000")
+	f.StringVar(&defaultTransportLayer, "default-transport", defaultTransport, "The default Transport layer when not configured for a Service (e.g. --default-transport=autorest")
 	f.StringVar(&serviceNamesRaw, "services", "", "A list of comma separated Service named from the Data API to import")
 	f.Parse(args)
 
@@ -75,6 +78,7 @@ func (c ImportCommand) Run(args []string) int {
 	input := pipeline.RunInput{
 		ConfigFilePath:           c.resourceManagerConfigPath,
 		DataApiEndpoint:          dataApiEndpoint,
+		DefaultTransport:         defaultTransportLayer,
 		Logger:                   logger,
 		OutputDirectory:          c.outputDirectory,
 		Services:                 serviceNames,

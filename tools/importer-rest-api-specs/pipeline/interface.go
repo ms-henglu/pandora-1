@@ -12,6 +12,7 @@ import (
 type RunInput struct {
 	ConfigFilePath           string
 	DataApiEndpoint          *string
+	DefaultTransport         string
 	JustOutputSegments       bool
 	JustParseData            bool
 	Logger                   hclog.Logger
@@ -31,6 +32,7 @@ func Run(input RunInput) error {
 	findInput := discovery.FindServiceInput{
 		SwaggerDirectory: input.SwaggerDirectory,
 		ConfigFilePath:   input.ConfigFilePath,
+		DefaultTransport: input.DefaultTransport,
 		OutputDirectory:  input.OutputDirectory,
 		Logger:           input.Logger.Named("Discovery"),
 	}

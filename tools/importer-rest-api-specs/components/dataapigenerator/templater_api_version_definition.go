@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/pandora/tools/importer-rest-api-specs/models"
 )
 
-func codeForApiVersionDefinition(namespace, apiVersion string, isPreview bool, resources map[string]models.AzureApiResource) string {
+func codeForApiVersionDefinition(namespace, apiVersion, transportLayer string, isPreview bool, resources map[string]models.AzureApiResource) string {
 	names := make([]string, 0)
 	for name, value := range resources {
 		// skip ones which are filtered out
@@ -35,14 +35,15 @@ public partial class Definition : ApiVersionDefinition
 {
 	public string ApiVersion => %[2]q;
 	public bool Preview => %[3]t;
+	public string TransportLayer => %[4]q;
     public Source Source => Source.ResourceManagerRestApiSpecs;
 	
 	public IEnumerable<ResourceDefinition> Resources => new List<ResourceDefinition>
 	{
-%[4]s
+%[5]s
 	};
 }
-`, namespace, apiVersion, isPreview, strings.Join(lines, "\n"))
+`, namespace, apiVersion, isPreview, transportLayer, strings.Join(lines, "\n"))
 }
 
 func codeForApiVersionDefinitionSetting(namespace string) string {

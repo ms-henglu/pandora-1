@@ -30,6 +30,7 @@ public static class Version
             {
                 Generate = input.Generate,
                 Preview = input.Preview,
+                TransportLayer = input.TransportLayer,
                 Resources = resourceDefinitions,
                 Source = MapSource(input.Source),
                 Version = input.ApiVersion,

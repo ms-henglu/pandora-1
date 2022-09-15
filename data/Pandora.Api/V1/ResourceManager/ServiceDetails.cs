@@ -40,7 +40,6 @@ public class ServiceDetailsController : ControllerBase
             ResourceProvider = version.ResourceManager ? version.ResourceProvider! : null,
             TerraformPackageName = version.TerraformPackageName,
             TerraformUri = $"/v1/resource-manager/services/{serviceName}/terraform",
-            TransportLayer = version.TransportLayer,
             Versions = version.Versions.ToDictionary(v => v.Version, v => MapVersion(v, serviceName))
         };
     }
@@ -51,6 +50,7 @@ public class ServiceDetailsController : ControllerBase
         {
             Generate = version.Generate,
             Preview = version.Preview,
+            TransportLayer = version.TransportLayer,
             Uri = $"/v1/resource-manager/services/{serviceName}/{version.Version}"
         };
     }
@@ -62,6 +62,9 @@ public class ServiceDetailsController : ControllerBase
 
         [JsonPropertyName("preview")]
         public bool Preview { get; set; }
+
+        [JsonPropertyName("transportLayer")]
+        public string TransportLayer { get; set; }
 
         [JsonPropertyName("uri")]
         public string Uri { get; set; }
@@ -77,9 +80,6 @@ public class ServiceDetailsController : ControllerBase
 
         [JsonPropertyName("terraformUri")]
         public string TerraformUri { get; set; }
-
-        [JsonPropertyName("transportLayer")]
-        public string? TransportLayer { get; set; }
 
         [JsonPropertyName("versions")]
         public Dictionary<string, VersionDetails> Versions { get; set; }

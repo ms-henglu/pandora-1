@@ -23,6 +23,11 @@ public interface ApiVersionDefinition
     bool Preview { get; }
 
     /// <summary>
+    /// TransportLayer specifies the base layer that should be used for this API Version (Supported: autorest, pandora).
+    /// </summary>
+    string TransportLayer { get; }
+
+    /// <summary>
     /// Resources returns a list of ResourceDefinitions for this API Version.
     /// </summary>
     IEnumerable<ResourceDefinition> Resources { get; }

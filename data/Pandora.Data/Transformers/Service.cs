@@ -40,7 +40,6 @@ public static class Service
                 ResourceProvider = input.ResourceProvider,
                 TerraformPackageName = input.TerraformPackageName,
                 TerraformResources = terraformResources,
-                TransportLayer = input.TransportLayer,
                 Versions = orderedVersions,
             };
         }

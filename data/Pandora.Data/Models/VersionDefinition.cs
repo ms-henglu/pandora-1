@@ -10,6 +10,8 @@ public class VersionDefinition
 
     public bool Preview { get; set; }
 
+    public string TransportLayer { get; set; }
+
     public IEnumerable<ResourceDefinition> Resources { get; set; }
 
     public ApiDefinitionsSource Source { get; set; }

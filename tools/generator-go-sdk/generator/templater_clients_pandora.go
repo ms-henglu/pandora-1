@@ -16,8 +16,8 @@ func (c clientsPandoraTemplater) template(data ServiceGeneratorData) (*string, e
 	template := fmt.Sprintf(`package %[1]s
 
 import (
-	"github.com/hashicorp/go-azure-sdk/client/resourcemanager"
-	"github.com/hashicorp/go-azure-sdk/environments"
+	"github.com/hashicorp/go-azure-sdk/sdk/client/resourcemanager"
+	"github.com/hashicorp/go-azure-sdk/sdk/environments"
 )
 
 %[3]s
