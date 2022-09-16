@@ -35,7 +35,7 @@ public partial class Definition : ApiVersionDefinition
 {
 	public string ApiVersion => %[2]q;
 	public bool Preview => %[3]t;
-	public TransportLayer TransportLayer =>TransportLayer. %[4]s;
+	public TransportLayer TransportLayer => TransportLayer.%[4]s;
     public Source Source => Source.ResourceManagerRestApiSpecs;
 	
 	public IEnumerable<ResourceDefinition> Resources => new List<ResourceDefinition>
