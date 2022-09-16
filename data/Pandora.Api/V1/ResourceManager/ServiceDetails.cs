@@ -50,7 +50,7 @@ public class ServiceDetailsController : ControllerBase
         {
             Generate = version.Generate,
             Preview = version.Preview,
-            ApiDefinitionsTransportLayer = version.ApiDefinitionsTransportLayer,
+            ApiDefinitionsTransportLayer = version.ApiDefinitionsTransportLayer.ToString(),
             Uri = $"/v1/resource-manager/services/{serviceName}/{version.Version}"
         };
     }
@@ -64,7 +64,7 @@ public class ServiceDetailsController : ControllerBase
         public bool Preview { get; set; }
 
         [JsonPropertyName("transportLayer")]
-        public ApiDefinitionsTransportLayer ApiDefinitionsTransportLayer { get; set; }
+        public string ApiDefinitionsTransportLayer { get; set; }
 
         [JsonPropertyName("uri")]
         public string Uri { get; set; }
