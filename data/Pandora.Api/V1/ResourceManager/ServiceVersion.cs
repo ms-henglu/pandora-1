@@ -49,7 +49,7 @@ public class ServiceVersionController : ControllerBase
             Resources = version.Resources.ToDictionary(a => a.Name,
                 a => MapResourceForApiVersion(a, versionNumber, serviceName)),
             Source = MapSource(version.Source),
-            TransportLayer = version.TransportLayer,
+            TransportLayer = MapTransportLayer(version.ApiDefinitionsTransportLayer),
         };
     }
 
@@ -61,6 +61,19 @@ public class ServiceVersionController : ControllerBase
                 return ApiDefinitionsSource.HandWritten.ToString();
             case Data.Models.ApiDefinitionsSource.ResourceManagerRestApiSpecs:
                 return ApiDefinitionsSource.ResourceManagerRestApiSpecs.ToString();
+        }
+
+        throw new NotSupportedException($"unsupported/unmapped Source {input.ToString()}");
+    }
+
+    private static string MapTransportLayer(Data.Models.ApiDefinitionsTransportLayer input)
+    {
+        switch (input)
+        {
+            case Data.Models.ApiDefinitionsTransportLayer.Autorest:
+                return ApiDefinitionsTransportLayer.Autorest.ToString();
+            case Data.Models.ApiDefinitionsTransportLayer.Pandora:
+                return ApiDefinitionsTransportLayer.Pandora.ToString();
         }
 
         throw new NotSupportedException($"unsupported/unmapped Source {input.ToString()}");

@@ -7,6 +7,7 @@ public partial class Definition : ApiVersionDefinition
 {
     public string ApiVersion => "2017-12-01";
     public bool Preview => false;
+    public TransportLayer TransportLayer => TransportLayer.Pandora;
     public Source Source => Source.ResourceManagerRestApiSpecs;
 
     public IEnumerable<ResourceDefinition> Resources => new List<ResourceDefinition>

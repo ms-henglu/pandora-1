@@ -5,6 +5,7 @@ using NUnit.Framework;
 using Pandora.Data.Models;
 using Pandora.Definitions.Interfaces;
 using Pandora.Definitions.Operations;
+using TransportLayer = Pandora.Definitions.Interfaces.TransportLayer;
 
 namespace Pandora.Data.Transformers;
 
@@ -39,7 +40,7 @@ public static class VersionTests
         public string ApiVersion => "SomeVersion";
         public bool Generate => false;
         public bool Preview => false;
-        public string TransportLayer => "pandora";
+        public TransportLayer TransportLayer => TransportLayer.Pandora;
         public IEnumerable<Definitions.Interfaces.ResourceDefinition> Resources => new List<Definitions.Interfaces.ResourceDefinition>();
         public Source Source => Source.HandWritten;
     }
@@ -49,7 +50,7 @@ public static class VersionTests
         public string ApiVersion => "SomeVersion";
         public bool Generate => true;
         public bool Preview => false;
-        public string TransportLayer => "pandora";
+        public TransportLayer TransportLayer => TransportLayer.Pandora;
         public IEnumerable<Definitions.Interfaces.ResourceDefinition> Resources => new List<Definitions.Interfaces.ResourceDefinition> { new SomeResourceDefinition() };
         public Source Source => Source.HandWritten;
     }
@@ -59,7 +60,7 @@ public static class VersionTests
         public string ApiVersion => "SomeVersion";
         public bool Generate => true;
         public bool Preview => false;
-        public string TransportLayer => "pandora";
+        public TransportLayer TransportLayer => TransportLayer.Pandora;
         public IEnumerable<Definitions.Interfaces.ResourceDefinition> Resources => new List<Definitions.Interfaces.ResourceDefinition> { new SomeResourceDefinition(), new SomeResourceDefinition() };
 
         public Source Source => Source.HandWritten;

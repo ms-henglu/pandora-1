@@ -7,6 +7,7 @@ public partial class Definition : ApiVersionDefinition
 {
     public string ApiVersion => "2020-10-05-privatepreview";
     public bool Preview => true;
+    public TransportLayer TransportLayer => TransportLayer.Autorest;
     public Source Source => Source.ResourceManagerRestApiSpecs;
 
     public IEnumerable<ResourceDefinition> Resources => new List<ResourceDefinition>

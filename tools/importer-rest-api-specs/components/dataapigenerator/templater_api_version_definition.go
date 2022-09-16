@@ -35,7 +35,7 @@ public partial class Definition : ApiVersionDefinition
 {
 	public string ApiVersion => %[2]q;
 	public bool Preview => %[3]t;
-	public string TransportLayer => %[4]q;
+	public TransportLayer TransportLayer =>TransportLayer. %[4]s;
     public Source Source => Source.ResourceManagerRestApiSpecs;
 	
 	public IEnumerable<ResourceDefinition> Resources => new List<ResourceDefinition>
@@ -43,7 +43,7 @@ public partial class Definition : ApiVersionDefinition
 %[5]s
 	};
 }
-`, namespace, apiVersion, isPreview, transportLayer, strings.Join(lines, "\n"))
+`, namespace, apiVersion, isPreview, strings.Title(transportLayer), strings.Join(lines, "\n"))
 }
 
 func codeForApiVersionDefinitionSetting(namespace string) string {

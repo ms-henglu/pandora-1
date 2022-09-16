@@ -8,7 +8,7 @@ public class Definition : ApiVersionDefinition
     public string ApiVersion => "2021-04-01-preview";
     public bool Generate => true;
     public bool Preview => true;
-	public string TransportLayer => "pandora";
+    public TransportLayer TransportLayer => TransportLayer.Autorest;
 
     public IEnumerable<ResourceDefinition> Resources => new List<ResourceDefinition>
     {

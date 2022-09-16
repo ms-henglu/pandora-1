@@ -25,7 +25,7 @@ public interface ApiVersionDefinition
     /// <summary>
     /// TransportLayer specifies the base layer that should be used for this API Version (Supported: autorest, pandora).
     /// </summary>
-    string TransportLayer { get; }
+    TransportLayer TransportLayer { get; }
 
     /// <summary>
     /// Resources returns a list of ResourceDefinitions for this API Version.
