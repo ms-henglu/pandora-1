@@ -2,74 +2,16 @@ package main
 
 import (
 	"fmt"
+	"github.com/getkin/kin-openapi/openapi3"
 	"log"
+	"net/http"
 	"os"
+	"os/exec"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
-
-	"github.com/getkin/kin-openapi/openapi3"
 )
-
-type ResourceId struct {
-	segments []ResourceIdSegment
-}
-
-type ResourceIdSegment struct {
-	Type  ResourceIdSegmentType
-	Value string
-	Field *string
-}
-
-type ResourceIdSegmentType uint
-
-const (
-	SegmentApiVersion ResourceIdSegmentType = iota
-	SegmentTenantId
-	SegmentLabel
-	SegmentAction
-	SegmentUserValue
-	SegmentCast
-	SegmentFunction
-)
-
-func normalizeFieldName(segment string) (field string) {
-	if segment[0] == '{' {
-		field = segment[1 : len(segment)-1]
-		field = strings.Title(field)
-		field = regexp.MustCompile("([^A-Za-z0-9])").ReplaceAllString(field, "")
-	}
-	return
-}
-
-func NewResourceId(path string, tag string) (id ResourceId) {
-	id.segments = []ResourceIdSegment{
-		{SegmentApiVersion, "v1.0", nil},
-		{SegmentTenantId, "{tenant-id}", nil},
-	}
-
-	segments := strings.FieldsFunc(path, func(c rune) bool { return c == '/' })
-	for _, s := range segments {
-		segment := ResourceIdSegment{}
-		if field := normalizeFieldName(s); field != "" {
-			segment = ResourceIdSegment{SegmentUserValue, s, &field}
-		} else {
-			if strings.HasPrefix(strings.ToLower(s), "microsoft.graph.") {
-				if strings.Contains(s, "(") {
-					segment = ResourceIdSegment{SegmentFunction, s, nil}
-				} else if strings.HasSuffix(strings.ToLower(tag), ".actions") {
-					segment = ResourceIdSegment{SegmentAction, s, nil}
-				} else {
-					segment = ResourceIdSegment{SegmentCast, s, nil}
-				}
-			} else {
-				segment = ResourceIdSegment{SegmentLabel, s, nil}
-			}
-		}
-		id.segments = append(id.segments, segment)
-	}
-	return
-}
 
 func main() {
 	spec, err := load("openapi-v1.0.yaml")
@@ -105,14 +47,6 @@ func load(filename string) (*openapi3.T, error) {
 	return spec, nil
 }
 
-type Endpoint struct {
-	id        ResourceId
-	path      string
-	pathItem  *openapi3.PathItem
-	method    string
-	operation *openapi3.Operation
-}
-
 func parse(spec *openapi3.T) error {
 	tags := make([]string, 0)
 	for _, tag := range spec.Tags {
@@ -124,58 +58,32 @@ func parse(spec *openapi3.T) error {
 		}
 	}
 
-	endpointsByTag := parseEndpoints(spec.Paths)
+	endpoints := parseEndpoints(spec.Paths)
 
 	// smaller map for easier inspection
-	applications := make(map[string][]*Endpoint)
-	for tag, endpoint := range endpointsByTag {
-		if strings.Contains(tag, "application") {
-			applications[tag] = endpoint
+	//applications := make([]*Endpoint, 0)
+	//for _, endpoint := range endpoints {
+	//	if strings.Contains(endpoint., "application") {
+	//		applications[tag] = endpoint
+	//	}
+	//}
+
+	colls := make([]*Endpoint, 0)
+	for _, e := range endpoints {
+		for _, o := range e.Operations {
+			for _, r := range o.Responses {
+				if r.Collection {
+					colls = append(colls, e)
+				}
+			}
 		}
 	}
 
-	fmt.Println("breakpoint here")
-
-	//models := make(map[string]*openapi3.SchemaRef)
-	//ml := []string{
-	//	"application", "directoryObject", "group", "user", "servicePrincipal",
-	//}
-	//for _, m := range ml {
-	//	models[m] = spec.Components.Schemas[fmt.Sprintf("microsoft.graph.%s", m)]
-	//}
-	//
-	//// models
-	//for otype, schema := range spec.Components.Schemas {
-	//	fmt.Printf("%s: %#v\n", otype, schema)
-	//}
-
-	//models := parseModels(spec.Components.Schemas)
-	//fmt.Printf("%T", models)
+	fmt.Println("%T", endpoints)
 
 	models := parseModelSchemas(spec.Components.Schemas)
-	fmt.Printf("%T", models)
 
-	tmpl := make([]string, 0)
-	for name, model := range models {
-		fields := make([]string, 0)
-		for n, f := range model.Fields {
-			if n[:1] == "@" {
-				continue
-			}
-			fields = append(fields, fmt.Sprintf(`	%s %s`, n, f.Type))
-		}
-		if len(fields) == 0 {
-			continue
-		}
-		sort.Strings(fields)
-		tmpl = append(tmpl, fmt.Sprintf(`type %s struct {
-%s
-}`, name, strings.Join(fields, "\n")))
-	}
-	sort.Strings(tmpl)
-	tmpls := fmt.Sprintf("package main\n\n%s", strings.Join(tmpl, "\n\n"))
-	err := os.WriteFile("/Users/tom/git/hashicorp/pandora/tools/importer-msgraph/models.go", []byte(tmpls), 0644)
-	if err != nil {
+	if err := writeModels(models); err != nil {
 		return err
 	}
 
@@ -198,24 +106,223 @@ func parse(spec *openapi3.T) error {
 	return nil
 }
 
-func parseEndpoints(paths openapi3.Paths) (ret map[string][]*Endpoint) {
-	ret = make(map[string][]*Endpoint)
-	for path, item := range paths {
-		for method, operation := range item.Operations() {
-			if operation.Tags == nil {
-				continue
-			}
-			for _, tag := range operation.Tags {
-				endpoint := Endpoint{
-					id:        NewResourceId(path, tag),
-					path:      path,
-					pathItem:  item,
-					method:    method,
-					operation: operation,
+func writeModels(models Models) error {
+	tmpl := make([]string, 0)
+	seenums := make(map[string]uint8, 0)
+	for name, model := range models {
+		fields := make([]string, 0)
+		for n, f := range model.Fields {
+			//if n[:1] == "@" {
+			//	continue
+			//}
+			fields = append(fields, fmt.Sprintf(`	%s %s %s`, cleanName(n), f.GoType(), f.GoTag()))
+			if _, seen := seenums[f.Title]; f.Type == FieldTypeString && f.Enum != nil && !seen {
+				seenums[f.Title] = 1
+				vals := make([]string, 0)
+				for _, e := range f.Enum {
+					vals = append(vals, fmt.Sprintf("%[1]s%[2]s %[1]s = %[3]q", f.Title, strings.Title(fmt.Sprintf("%s", e)), e))
 				}
-				ret[tag] = append(ret[tag], &endpoint)
+				tmpl = append(tmpl, fmt.Sprintf(`type %s string
+
+const (
+	%s
+)`, f.Title, strings.Join(vals, "\n\t")))
 			}
 		}
+		if len(fields) == 0 {
+			continue
+		}
+		sort.Strings(fields)
+		tmpl = append(tmpl, fmt.Sprintf(`type %s struct {
+%s
+}`, name, strings.Join(fields, "\n")))
+	}
+	sort.Strings(tmpl)
+	tmpls := fmt.Sprintf("package output\n\nimport (\n\t\"time\"\n)\n\n%s\n\n%s", CustomTypes, strings.Join(tmpl, "\n\n"))
+	outPath := "/Users/tom/git/hashicorp/pandora/tools/importer-msgraph/output/models.go"
+	err := os.WriteFile(outPath, []byte(tmpls), 0644)
+	if err != nil {
+		return err
+	}
+	err = exec.Command("gofmt", "-w", outPath).Run()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type ResourceId struct {
+	segments []ResourceIdSegment
+}
+
+type ResourceIdSegment struct {
+	Type  ResourceIdSegmentType
+	Value string
+	Field *string
+}
+
+type ResourceIdSegmentType uint
+
+const (
+	SegmentApiVersion ResourceIdSegmentType = iota
+	SegmentTenantId
+	SegmentLabel
+	SegmentAction
+	SegmentUserValue
+	SegmentCast
+	SegmentFunction
+)
+
+const CustomTypes string = `
+type UUID struct {}
+`
+
+func normalizeFieldName(segment string) (field string) {
+	if segment[0] == '{' {
+		field = segment[1 : len(segment)-1]
+		field = strings.Title(field)
+		field = regexp.MustCompile("([^A-Za-z0-9])").ReplaceAllString(field, "")
+	}
+	return
+}
+
+func NewResourceId(path string, tags []string) (id ResourceId) {
+	tagSuffix := func(suffix string) bool {
+		for _, t := range tags {
+			if strings.HasSuffix(strings.ToLower(t), suffix) {
+				return true
+			}
+		}
+		return false
+	}
+	id.segments = []ResourceIdSegment{
+		{SegmentApiVersion, "v1.0", nil},
+		{SegmentTenantId, "{tenant-id}", nil},
+	}
+
+	segments := strings.FieldsFunc(path, func(c rune) bool { return c == '/' })
+	for _, s := range segments {
+		segment := ResourceIdSegment{}
+		if field := normalizeFieldName(s); field != "" {
+			segment = ResourceIdSegment{SegmentUserValue, s, &field}
+		} else {
+			if strings.HasPrefix(strings.ToLower(s), "microsoft.graph.") {
+				if strings.Contains(s, "(") {
+					segment = ResourceIdSegment{SegmentFunction, s, nil}
+				} else if tagSuffix(".actions") {
+					segment = ResourceIdSegment{SegmentAction, s, nil}
+				} else {
+					segment = ResourceIdSegment{SegmentCast, s, nil}
+				}
+			} else {
+				segment = ResourceIdSegment{SegmentLabel, s, nil}
+			}
+		}
+		id.segments = append(id.segments, segment)
+	}
+	return
+}
+
+type Endpoint struct {
+	Id         ResourceId
+	Operations []Operation
+}
+
+type Operation struct {
+	Type         OperationType
+	Method       string
+	RequestModel interface{}
+	Responses    []Response
+	Tags         []string
+}
+
+type Response struct {
+	Status      int
+	ContentType *string
+	Collection  bool
+	ModelName   *string
+}
+
+type OperationType uint8
+
+func NewOperationType(method string) OperationType {
+	switch method {
+	case http.MethodGet:
+		return OperationTypeRead
+	case http.MethodPost:
+		return OperationTypeCreate
+	case http.MethodPatch:
+		return OperationTypeUpdate
+	case http.MethodPut:
+		return OperationTypeCreateUpdate
+	case http.MethodDelete:
+		return OperationTypeDelete
+	}
+	return OperationTypeUnknown
+}
+
+const (
+	OperationTypeUnknown OperationType = iota
+	OperationTypeList
+	OperationTypeRead
+	OperationTypeCreate
+	OperationTypeCreateUpdate
+	OperationTypeUpdate
+	OperationTypeDelete
+)
+
+func parseEndpoints(paths openapi3.Paths) (ret []*Endpoint) {
+	ret = make([]*Endpoint, 0)
+	for path, item := range paths {
+		endpoint := Endpoint{
+			Id:         NewResourceId(path, make([]string, 0)),
+			Operations: make([]Operation, 0),
+			//Tags: operation.Tags,
+		}
+		for method, operation := range item.Operations() {
+			responses := make([]Response, 0)
+			if operation.Responses != nil {
+				for stat, resp := range operation.Responses {
+					var status int
+					var contentType, model *string
+					var collection bool
+					// TODO: expand this
+					if s, err := strconv.Atoi(strings.ReplaceAll(stat, "X", "0")); err == nil {
+						status = s
+					}
+					if resp.Value != nil && resp.Value.Content != nil {
+						for t, m := range resp.Value.Content {
+							contentType = &t
+							if s := parseSchemaRef(m.Schema); s != nil {
+								f, _ := flattenSchema(s, nil)
+								if f.title != "" {
+									if strings.HasPrefix(f.title, "Collection of ") {
+										f.title = f.title[14:]
+										collection = true
+									}
+									model = &f.title
+								}
+							}
+							break
+						}
+					}
+					responses = append(responses, Response{
+						Status:      status,
+						ContentType: contentType,
+						Collection:  collection,
+						ModelName:   model,
+					})
+				}
+			}
+			endpoint.Operations = append(endpoint.Operations, Operation{
+				Type:         NewOperationType(method),
+				Method:       method,
+				RequestModel: nil,
+				Responses:    responses,
+				Tags:         operation.Tags,
+			})
+		}
+		ret = append(ret, &endpoint)
 	}
 	return
 }
@@ -246,36 +353,104 @@ func (m Model) Merge(m2 Model) {
 }
 
 type ModelField struct {
+	Title       string
 	Type        FieldType
 	Description string
 	Default     interface{}
 	Enum        []interface{}
 	ModelName   string
+	JsonField   string
 }
 
-type FieldType uint
+func (f ModelField) GoTag() string {
+	return fmt.Sprintf("`json:\"%s,omitempty\"`", f.JsonField)
+}
 
-func (t FieldType) String() string {
-	switch t {
-	case FieldTypeModel, FieldTypeInterface:
-		return "interface{}"
+func (f ModelField) GoType() string {
+	switch f.Type {
+	case FieldTypeModel:
+		if f.ModelName == "" {
+			return "interface{}" // TODO: model not found
+		}
+		return fmt.Sprintf("*%s", f.ModelName)
+	case FieldTypeArray:
+		if f.ModelName == "" {
+			return "[]interface{}" // TODO: model not found
+		}
+		return fmt.Sprintf("*[]%s", f.ModelName)
 	case FieldTypeString:
-		return "string"
-	case FieldTypeInt:
-		return "int"
+		if f.Enum != nil {
+			return fmt.Sprintf("*%s", f.Title)
+		}
+		return "*string"
+	case FieldTypeInteger:
+		return "*int"
+	case FieldTypeIntegerUnsigned:
+		return "*uint"
+	case FieldTypeInteger32:
+		return "*int32"
+	case FieldTypeIntegerUnsigned32:
+		return "*uint32"
+	case FieldTypeInteger16:
+		return "*int16"
+	case FieldTypeIntegerUnsigned16:
+		return "*uint16"
+	case FieldTypeInteger8:
+		return "*int8"
+	case FieldTypeIntegerUnsigned8:
+		return "*uint8"
 	case FieldTypeBool:
-		return "bool"
+		return "*bool"
+	case FieldTypeInterface:
+		return "interface{}"
+	case FieldTypeBase64:
+		return "[]byte"
+	case FieldTypeDate:
+		return "time.Time" // TODO: date
+	case FieldTypeDateTime:
+		return "time.Time"
+	case FieldTypeDuration:
+		return "*string" // TODO: ISO8601 duration
+	case FieldTypeTime:
+		return "time.Time" // TODO: time
+	case FieldTypeUuid:
+		return "*UUID"
 	}
 	return ""
 }
 
+type FieldType uint8
+
 const (
 	FieldTypeModel FieldType = iota
+	FieldTypeArray
 	FieldTypeString
-	FieldTypeInt
+	FieldTypeInteger
+	FieldTypeIntegerUnsigned
+	FieldTypeInteger32
+	FieldTypeIntegerUnsigned32
+	FieldTypeInteger16
+	FieldTypeIntegerUnsigned16
+	FieldTypeInteger8
+	FieldTypeIntegerUnsigned8
 	FieldTypeBool
 	FieldTypeInterface
+	FieldTypeBase64
+	FieldTypeDate
+	FieldTypeDateTime
+	FieldTypeDuration
+	FieldTypeTime
+	FieldTypeUuid
 )
+
+func cleanName(name string) string {
+	name = strings.Title(strings.TrimPrefix(name, "microsoft.graph."))
+	name = regexp.MustCompile("[^a-zA-Z0-9]").ReplaceAllString(name, "")
+	name = regexp.MustCompile("^Is([A-Z])").ReplaceAllString(name, "$1")
+	name = regexp.MustCompile("^Odata").ReplaceAllString(name, "OData")
+	name = regexp.MustCompile("^Innererror").ReplaceAllString(name, "InnerError")
+	return name
+}
 
 func parseModelSchemas(schemas openapi3.Schemas) Models {
 	models := make(Models)
@@ -284,7 +459,7 @@ func parseModelSchemas(schemas openapi3.Schemas) Models {
 		//	continue
 		//}
 
-		name := regexp.MustCompile("[^a-zA-Z0-9]").ReplaceAllString(strings.Title(strings.TrimPrefix(modelName, "microsoft.graph.")), "")
+		name := cleanName(modelName)
 		if schema := parseSchemaRef(schemaRef); schema != nil {
 			var f flattenedSchema
 			f, _ = flattenSchema(schema, nil)
@@ -306,46 +481,67 @@ func flattenSchema(schema *openapi3.Schema, seenRefs []string) (flattenedSchema,
 	}
 	schemas := make(openapi3.Schemas, 0)
 	title := ""
-	if schema.AllOf != nil {
-		for _, r := range schema.AllOf {
-			if r.Ref != "" {
-				for _, s := range seenRefs {
-					if s == r.Ref {
-						continue
-					}
+	if r := schema.Items; r != nil {
+		if r.Ref != "" {
+			for _, s := range seenRefs {
+				if s == r.Ref {
+					continue
 				}
-				seenRefs = append(seenRefs, r.Ref)
 			}
-			if s := parseSchemaRef(r); s != nil {
-				var result flattenedSchema
-				result, seenRefs = flattenSchema(s, seenRefs)
-				if result.title != "" {
-					title = result.title
+			seenRefs = append(seenRefs, r.Ref)
+		}
+		if s := parseSchemaRef(r); s != nil {
+			var result flattenedSchema
+			result, seenRefs = flattenSchema(s, seenRefs)
+			if result.title != "" {
+				title = result.title
+			}
+			for k, v := range result.schemas {
+				schemas[k] = v
+			}
+		}
+	} else {
+		if schema.AllOf != nil {
+			for _, r := range schema.AllOf {
+				if r.Ref != "" {
+					for _, s := range seenRefs {
+						if s == r.Ref {
+							continue
+						}
+					}
+					seenRefs = append(seenRefs, r.Ref)
 				}
-				for k, v := range result.schemas {
-					schemas[k] = v
+				if s := parseSchemaRef(r); s != nil {
+					var result flattenedSchema
+					result, seenRefs = flattenSchema(s, seenRefs)
+					if result.title != "" {
+						title = result.title
+					}
+					for k, v := range result.schemas {
+						schemas[k] = v
+					}
 				}
 			}
 		}
-	}
-	if schema.AnyOf != nil {
-		for _, r := range schema.AnyOf {
-			if r.Ref != "" {
-				for _, s := range seenRefs {
-					if s == r.Ref {
-						continue
+		if schema.AnyOf != nil {
+			for _, r := range schema.AnyOf {
+				if r.Ref != "" {
+					for _, s := range seenRefs {
+						if s == r.Ref {
+							continue
+						}
 					}
+					seenRefs = append(seenRefs, r.Ref)
 				}
-				seenRefs = append(seenRefs, r.Ref)
-			}
-			if s := parseSchemaRef(r); s != nil {
-				var result flattenedSchema
-				result, seenRefs = flattenSchema(s, seenRefs)
-				if result.title != "" {
-					title = result.title
-				}
-				for k, v := range result.schemas {
-					schemas[k] = v
+				if s := parseSchemaRef(r); s != nil {
+					var result flattenedSchema
+					result, seenRefs = flattenSchema(s, seenRefs)
+					if result.title != "" {
+						title = result.title
+					}
+					for k, v := range result.schemas {
+						schemas[k] = v
+					}
 				}
 			}
 		}
@@ -385,32 +581,81 @@ func parseSchemas(input flattenedSchema, modelName string, models Models) Models
 	for k, v := range input.schemas {
 		schema := parseSchemaRef(v)
 		result, _ := flattenSchema(schema, nil)
+		title := ""
+		if result.title != "" {
+			title = strings.Title(result.title)
+		} else {
+			//title = fmt.Sprintf("%s%s", strings.Title(modelName), strings.Title(k))
+			title = strings.Title(k)
+		}
 		field := ModelField{
+			Title:       title,
 			Description: schema.Description,
 			Default:     schema.Default,
 			Enum:        schema.Enum,
+			JsonField:   k,
 		}
 		if result.schemas != nil {
-			extraModelName := ""
-			if result.title != "" {
-				extraModelName = strings.Title(result.title)
-			} else {
-				extraModelName = fmt.Sprintf("%s%s", strings.Title(modelName), strings.Title(k))
+			if _, ok := models[title]; !ok {
+				models = parseSchemas(result, title, models)
 			}
-			if _, ok := models[extraModelName]; !ok {
-				models = parseSchemas(result, extraModelName, models)
-			}
+			field.ModelName = title
+		}
+		switch schema.Type {
+		case "object":
 			field.Type = FieldTypeModel
-			field.ModelName = extraModelName
-		} else {
-			switch schema.Type {
-			case "string":
+		case "array":
+			field.Type = FieldTypeArray
+		case "boolean":
+			field.Type = FieldTypeBool
+		case "integer":
+			switch strings.ToLower(schema.Format) {
+			case "int64":
+				field.Type = FieldTypeInteger
+			case "uint64":
+				field.Type = FieldTypeIntegerUnsigned
+			case "int32":
+				field.Type = FieldTypeInteger32
+			case "uint32":
+				field.Type = FieldTypeIntegerUnsigned32
+			case "int16":
+				field.Type = FieldTypeInteger16
+			case "uint16":
+				field.Type = FieldTypeIntegerUnsigned16
+			case "int8":
+				field.Type = FieldTypeInteger8
+			case "uint8":
+				field.Type = FieldTypeIntegerUnsigned8
+			default:
+				field.Type = FieldTypeInteger
+			}
+		case "string":
+			switch strings.ToLower(schema.Format) {
+			case "base64url":
+				field.Type = FieldTypeBase64
+			case "date":
+				field.Type = FieldTypeDate
+			case "date-time":
+				field.Type = FieldTypeDateTime
+			case "duration":
+				field.Type = FieldTypeDuration
+			case "time":
+				field.Type = FieldTypeTime
+			case "uuid":
+				field.Type = FieldTypeUuid
+			case "":
 				field.Type = FieldTypeString
 			default:
+				field.Type = FieldTypeString
+			}
+		default:
+			if field.ModelName == "" {
 				field.Type = FieldTypeInterface
+			} else {
+				field.Type = FieldTypeModel
 			}
 		}
-		model.Fields[k] = &field
+		model.Fields[cleanName(k)] = &field
 	}
 	return models
 }
